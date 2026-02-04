@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>বুকমার্ক - NewsDaily</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header-main">
+        <div class="container">
+            <div class="header-content">
+                <a href="index.html" class="logo"><span>News</span>Daily</a>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+                    <a href="profile.html" class="icon-btn">👤</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="bookmarks-page">
+        <div class="container">
+            <h1 class="page-title">🔖 আমার বুকমার্ক</h1>
+            
+            <div class="bookmarks-grid" id="bookmarksGrid">
+                <!-- Dynamic -->
+            </div>
+
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon">🔖</div>
+                <h3>কোনো বুকমার্ক নেই</h3>
+                <p>আপনার পছন্দের আর্টিকেল বুকমার্ক করে রাখুন</p>
+                <a href="index.html" class="btn btn-primary">নিউজ পড়ুন</a>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/data.js"></script>
+    <script src="js/user.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBookmarks();
+        });
+
+        function loadBookmarks() {
+            const bookmarks = UserManager.getBookmarks();
+            const grid = document.getElementById('bookmarksGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            if (bookmarks.length === 0) {
+                grid.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            grid.innerHTML = bookmarks.map(id => {
+                const article = DataManager.getPost(id);
+                if (!article) return '';
+                
+                return `
+                    <article class="news-card">
+                        <div style="position: relative;">
+                            <img class="news-image" src="${article.image}" alt="${article.title}" onerror="this.src='https://via.placeholder.com/400x300'">
+                            <button onclick="removeBookmark(${id})" class="remove-bookmark" title="বুকমার্ক সরান">✕</button>
+                        </div>
+                        <div class="news-content">
+                            <div class="news-category">${article.category}</div>
+                            <h3 class="news-title"><a href="article.html?id=${id}">${article.title}</a></h3>
+                            <p class="news-excerpt">${article.excerpt}</p>
+                            <div class="news-meta">
+                                <span>${formatDate(article.date)}</span>
+                                <span>${article.views || 0} views</span>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function removeBookmark(id) {
+            if (confirm('বুকমার্ক সরাতে চান?')) {
+                UserManager.removeBookmark(id);
+                loadBookmarks();
+            }
+        }
+    </script>
+</body>
+</html>
