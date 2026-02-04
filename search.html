@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search - NewsDaily</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header-main">
+        <div class="container">
+            <div class="header-content">
+                <a href="index.html" class="logo"><span>News</span>Daily</a>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+                    <a href="bookmarks.html" class="icon-btn">🔖</a>
+                    <a href="profile.html" class="icon-btn">👤</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="search-page">
+        <div class="container">
+            <div class="search-box-large">
+                <h1>খুঁজুন</h1>
+                <form onsubmit="performSearch(event)">
+                    <input type="text" id="searchQuery" placeholder="কী খুঁজছেন..." autofocus>
+                    <button type="submit">🔍</button>
+                </form>
+            </div>
+
+            <div class="search-filters">
+                <button class="filter-btn active" onclick="filterResults('all')">সব</button>
+                <button class="filter-btn" onclick="filterResults('title')">শিরোনাম</button>
+                <button class="filter-btn" onclick="filterResults('content')">কন্টেন্ট</button>
+                <button class="filter-btn" onclick="filterResults('author')">লেখক</button>
+            </div>
+
+            <div id="searchResults">
+                <div class="search-info">
+                    <p>খোঁজা শুরু করতে উপরের বক্সে লিখুন</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/data.js"></script>
+    <script>
+        let currentFilter = 'all';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const query = urlParams.get('q');
+            if (query) {
+                document.getElementById('searchQuery').value = query;
+                search(query);
+            }
+        });
+
+        function performSearch(e) {
+            e.preventDefault();
+            const query = document.getElementById('searchQuery').value;
+            if (query) {
+                search(query);
+                // Update URL
+                window.history.replaceState({}, '', `?q=${encodeURIComponent(query)}`);
+            }
+        }
+
+        function search(query) {
+            const posts = DataManager.getPosts();
+            const lowerQuery = query.toLowerCase();
+            
+            const results = posts.filter(post => {
+                switch(currentFilter) {
+                    case 'title':
+                        return post.title.toLowerCase().includes(lowerQuery);
+                    case 'content':
+                        return (post.content || '').toLowerCase().includes(lowerQuery);
+                    case 'author':
+                        return post.author.toLowerCase().includes(lowerQuery);
+                    default:
+                        return post.title.toLowerCase().includes(lowerQuery) ||
+                               (post.content || '').toLowerCase().includes(lowerQuery) ||
+                               post.author.toLowerCase().includes(lowerQuery) ||
+                               post.category.toLowerCase().includes(lowerQuery);
+                }
+            });
+
+            const container = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <h3>কোনো ফলাফল পাওয়া যায়নি</h3>
+                        <p>"${query}" এর জন্য কিছু পাওয়া যায়নি</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="search-info">
+                        <h3>"${query}" এর জন্য ${results.length}টি ফলাফল</h3>
+                    </div>
+                    <div class="news-grid">
+                        ${results.map(post => `
+                            <article class="news-card">
+                                <img class="news-image" src="${post.image}" alt="" onerror="this.src='https://via.placeholder.com/400x300'">
+                                <div class="news-content">
+                                    <div class="news-category">${post.category}</div>
+                                    <h3 class="news-title"><a href="article.html?id=${post.id}">${highlightText(post.title, query)}</a></h3>
+                                    <p class="news-excerpt">${post.excerpt}</p>
+                                    <div class="news-meta">
+                                        <span>${post.author}</span>
+                                        <span>${formatDate(post.date)}</span>
+                                    </div>
+                                </div>
+                            </article>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        function filterResults(type) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const query = document.getElementById('searchQuery').value;
+            if (query) search(query);
+        }
+
+        function highlightText(text, query) {
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+    </script>
+</body>
+</html>
