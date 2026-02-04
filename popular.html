@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>জনপ্রিয় খবর - NewsDaily</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header-main">
+        <div class="container">
+            <div class="header-content">
+                <a href="index.html" class="logo"><span>News</span>Daily</a>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+                    <a href="bookmarks.html" class="icon-btn">🔖</a>
+                    <a href="profile.html" class="icon-btn">👤</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="popular-page">
+        <div class="container">
+            <h1 class="page-title">🔥 জনপ্রিয় খবর</h1>
+            
+            <div class="trending-tabs">
+                <button class="tab-btn active" onclick="showTrending('today')">আজকের</button>
+                <button class="tab-btn" onclick="showTrending('week')">এই সপ্তাহের</button>
+                <button class="tab-btn" onclick="showTrending('month')">এই মাসের</button>
+                <button class="tab-btn" onclick="showTrending('all')">সর্বকালের</button>
+            </div>
+
+            <div class="trending-content" id="trendingContent">
+                <!-- Dynamic -->
+            </div>
+        </div>
+    </main>
+
+    <script src="js/data.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            showTrending('today');
+        });
+
+        function showTrending(period) {
+            // Update tabs
+            document.querySelectorAll('.trending-tabs .tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const posts = DataManager.getPosts();
+            const now = new Date();
+            let filtered = posts;
+            
+            // Filter by period
+            switch(period) {
+                case 'today':
+                    const today = new Date().setHours(0,0,0,0);
+                    filtered = posts.filter(p => new Date(p.date) >= today);
+                    break;
+                case 'week':
+                    const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+                    filtered = posts.filter(p => new Date(p.date) >= weekAgo);
+                    break;
+                case 'month':
+                    const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+                    filtered = posts.filter(p => new Date(p.date) >= monthAgo);
+                    break;
+            }
+            
+            // Sort by popularity (views + likes*2 + bookmarks*3)
+            const sorted = filtered.map(p => ({
+                ...p,
+                score: (p.views || 0) + ((p.likes || 0) * 2) + ((p.bookmarks || 0) * 3)
+            })).sort((a, b) => b.score - a.score).slice(0, 10);
+            
+            const container = document.getElementById('trendingContent');
+            
+            if (sorted.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 40px;">এই সময়ে কোনো খবর নেই</p>';
+            } else {
+                container.innerHTML = sorted.map((post, index) => `
+                    <div class="trending-item">
+                        <div class="trend-rank">${index + 1}</div>
+                        <img src="${post.image}" alt="" onerror="this.src='https://via.placeholder.com/200x150'">
+                        <div class="trend-info">
+                            <span class="category-tag">${post.category}</span>
+                            <h3><a href="article.html?id=${post.id}">${post.title}</a></h3>
+                            <div class="trend-stats">
+                                <span>👁️ ${post.views || 0}</span>
+                                <span>❤️ ${post.likes || 0}</span>
+                                <span>🔖 ${post.bookmarks || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+    </script>
+</body>
+</html>
